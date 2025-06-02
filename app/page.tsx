@@ -209,19 +209,126 @@ export default function PasswordGenerator() {
 
     while (attempts < maxAttempts) {
       let password = ""
+      let remainingLength = config.length
 
-      // Start with letter if required
+      // Paso 1: Asegurar al menos un carácter de cada tipo habilitado
+      const requiredChars: string[] = []
+
+      // Añadir carácter obligatorio si "iniciar con letra" está activado
       if (config.startWithLetter && letterSet) {
-        password += letterSet[Math.floor(Math.random() * letterSet.length)]
+        const letterChar = letterSet[Math.floor(Math.random() * letterSet.length)]
+        requiredChars.push(letterChar)
+        remainingLength--
       }
 
-      // Generate remaining characters
-      const remainingLength = config.length - password.length
+      // Preparar conjuntos de caracteres por tipo
+      let lowercaseSet = ""
+      let uppercaseSet = ""
+      let numberSet = ""
+      let specialSet = ""
+
+      if (config.includeLowercase) {
+        lowercaseSet = "abcdefghijklmnopqrstuvwxyz"
+        if (config.avoidSimilar) {
+          lowercaseSet = lowercaseSet
+            .split("")
+            .filter((char) => !similarCharacters.includes(char))
+            .join("")
+        }
+      }
+
+      if (config.includeUppercase) {
+        uppercaseSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        if (config.avoidSimilar) {
+          uppercaseSet = uppercaseSet
+            .split("")
+            .filter((char) => !similarCharacters.includes(char))
+            .join("")
+        }
+      }
+
+      if (config.includeNumbers) {
+        numberSet = "0123456789"
+        if (config.avoidSimilar) {
+          numberSet = numberSet
+            .split("")
+            .filter((char) => !similarCharacters.includes(char))
+            .join("")
+        }
+      }
+
+      if (config.customCharacters.trim()) {
+        specialSet = config.customCharacters
+        if (config.avoidSimilar) {
+          specialSet = specialSet
+            .split("")
+            .filter((char) => !similarCharacters.includes(char))
+            .join("")
+        }
+      }
+
+      // Añadir un carácter obligatorio de cada tipo habilitado (excepto si ya se añadió con startWithLetter)
+      if (config.includeLowercase && lowercaseSet && remainingLength > 0) {
+        // Solo añadir si no se añadió ya con startWithLetter
+        if (!config.startWithLetter || !/[a-z]/.test(requiredChars.join(""))) {
+          const char = lowercaseSet[Math.floor(Math.random() * lowercaseSet.length)]
+          requiredChars.push(char)
+          remainingLength--
+        }
+      }
+
+      if (config.includeUppercase && uppercaseSet && remainingLength > 0) {
+        // Solo añadir si no se añadió ya con startWithLetter
+        if (!config.startWithLetter || !/[A-Z]/.test(requiredChars.join(""))) {
+          const char = uppercaseSet[Math.floor(Math.random() * uppercaseSet.length)]
+          requiredChars.push(char)
+          remainingLength--
+        }
+      }
+
+      if (config.includeNumbers && numberSet && remainingLength > 0) {
+        const char = numberSet[Math.floor(Math.random() * numberSet.length)]
+        requiredChars.push(char)
+        remainingLength--
+      }
+
+      if (config.customCharacters.trim() && specialSet && remainingLength > 0) {
+        const char = specialSet[Math.floor(Math.random() * specialSet.length)]
+        requiredChars.push(char)
+        remainingLength--
+      }
+
+      // Paso 2: Rellenar el resto de la longitud con caracteres aleatorios
+      const randomChars: string[] = []
       for (let i = 0; i < remainingLength; i++) {
-        password += charset[Math.floor(Math.random() * charset.length)]
+        randomChars.push(charset[Math.floor(Math.random() * charset.length)])
       }
 
-      // Check constraints
+      // Paso 3: Combinar y mezclar todos los caracteres
+      const allChars = [...requiredChars, ...randomChars]
+
+      // Mezclar el array (excepto el primer carácter si debe ser letra)
+      if (config.startWithLetter && allChars.length > 0) {
+        const firstChar = allChars[0]
+        const restChars = allChars.slice(1)
+
+        // Mezclar el resto de caracteres
+        for (let i = restChars.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[restChars[i], restChars[j]] = [restChars[j], restChars[i]]
+        }
+
+        password = firstChar + restChars.join("")
+      } else {
+        // Mezclar todos los caracteres
+        for (let i = allChars.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[allChars[i], allChars[j]] = [allChars[j], allChars[i]]
+        }
+        password = allChars.join("")
+      }
+
+      // Paso 4: Validar restricciones
       let isValid = true
 
       if (config.avoidDuplicates && hasDuplicates(password)) {
@@ -239,7 +346,7 @@ export default function PasswordGenerator() {
       attempts++
     }
 
-    // Fallback: generate simple password if constraints are too restrictive
+    // Fallback: generar contraseña simple si las restricciones son muy estrictas
     let fallback = ""
     if (config.startWithLetter && letterSet) {
       fallback += letterSet[Math.floor(Math.random() * letterSet.length)]
