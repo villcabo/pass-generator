@@ -38,7 +38,7 @@ const defaultConfig: PasswordConfig = {
   avoidSimilar: false,
   avoidDuplicates: false,
   avoidSequences: false,
-  customCharacters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?",
+  customCharacters: "!@#$%^&*()_+-=[]{}|;:,.<>?",
   autoGenerate: true,
   quantity: 5,
   viewMode: "detailed",
@@ -133,32 +133,36 @@ export default function PasswordGenerator() {
   }
 
   const getCharacterSet = (): string => {
-    if (config.customCharacters.trim()) {
-      let chars = config.customCharacters
-      if (config.avoidSimilar) {
-        chars = chars
-          .split("")
-          .filter((char) => !similarCharacters.includes(char))
-          .join("")
-      }
-      return chars
-    }
-
     let charset = ""
+
+    // Añadir caracteres base según los checkboxes
     if (config.includeLowercase) charset += "abcdefghijklmnopqrstuvwxyz"
     if (config.includeUppercase) charset += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if (config.includeNumbers) charset += "0123456789"
 
-    if (!config.includeLowercase && !config.includeUppercase && !config.includeNumbers) {
-      charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    // Añadir caracteres personalizados adicionales
+    if (config.customCharacters.trim()) {
+      charset += config.customCharacters
     }
 
+    // Si no hay ningún checkbox seleccionado, usar configuración mínima
+    if (!config.includeLowercase && !config.includeUppercase && !config.includeNumbers) {
+      charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      if (config.customCharacters.trim()) {
+        charset += config.customCharacters
+      }
+    }
+
+    // Aplicar filtro de caracteres similares si está activado
     if (config.avoidSimilar) {
       charset = charset
         .split("")
         .filter((char) => !similarCharacters.includes(char))
         .join("")
     }
+
+    // Eliminar duplicados que puedan surgir de la combinación
+    charset = [...new Set(charset.split(""))].join("")
 
     return charset
   }
@@ -481,16 +485,18 @@ export default function PasswordGenerator() {
                 {/* Custom Characters */}
                 <div className="space-y-2">
                   <Label htmlFor="customChars" className="text-sm font-medium">
-                    Caracteres personalizados
+                    Caracteres especiales adicionales
                   </Label>
                   <Input
                     id="customChars"
                     value={config.customCharacters}
                     onChange={(e) => updateConfig("customCharacters", e.target.value)}
-                    placeholder="Caracteres permitidos..."
+                    placeholder="Ej: !@#$%^&*()..."
                     className="text-xs"
                   />
-                  <p className="text-xs text-slate-500">Deja vacío para usar configuración estándar</p>
+                  <p className="text-xs text-slate-500">
+                    Caracteres adicionales que se combinarán con las opciones seleccionadas arriba
+                  </p>
                 </div>
               </CardContent>
             </Card>
