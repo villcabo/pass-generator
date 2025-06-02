@@ -25,13 +25,13 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Build Next.js app
-        run: npm run build
+        run: pnpm run build
 
       - name: Export static site
-        run: npm run export
+        run: pnpm run export
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
