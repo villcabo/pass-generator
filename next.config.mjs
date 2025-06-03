@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const isGithubPages = process.env.GH_PAGES === 'true';
+const isGithubPages = 'true';
 const nextConfig = {
   output: 'export',
   basePath: isGithubPages ? '/pass-generator>' : '',
